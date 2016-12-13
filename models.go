@@ -75,6 +75,13 @@ CREATE TABLE IF NOT EXISTS members(
     name VARCHAR(70)
 );`
 
+var ListCardsSchema = `
+CREATE TABLE IF NOT EXISTS list_cards(
+    list_id INT REFERENCES lists (list_id) ON UPDATE CASCADE,
+    card_id INT REFERENCES cards (card_id) ON UPDATE CASCADE,
+    CONSTRAINT list_card_key PRIMARY KEY (list_id, card_id)
+);`
+
 var SubscriptionSchema = `
 CREATE TABLE IF NOT EXISTS subscriptions(
     member_id INT REFERENCES members (member_id) ON UPDATE CASCADE,
@@ -106,18 +113,19 @@ func InitializeDB() (*sql.DB, error) {
 
 func CreateTables(db *sql.DB) error {
 	var err error
-
 	_, err = db.Exec(ListSchema)
 	if err != nil {
 		return err
 	}
-
 	_, err = db.Exec(CardSchema)
 	if err != nil {
 		return err
 	}
-
 	_, err = db.Exec(MemberSchema)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(ListCardsSchema)
 	if err != nil {
 		return err
 	}
@@ -165,4 +173,39 @@ func InsertMember(db *sql.DB, m *Member) (int, error) {
 	}
 	m.Id = lastInsertId
 	return lastInsertId, nil
+}
+
+// SelectList returns a *List from db.
+func SelectList(db *sql.DB, id int) (*List, error) {
+	l := new(List)
+	stmt := "select * from lists where list_id = $1"
+	err := db.QueryRow(stmt, id).Scan(&l.Id, &l.Title)
+	if err != nil {
+		return l, err
+	}
+	// TODO: Find all cards that belong to said list
+	return l, nil
+}
+
+// SelectCard returns  a *Card from DB with id
+func SelectCard(db *sql.DB, id int) (*Card, error) {
+	c := new(Card)
+	stmt := "select * from cards where card_id = $1"
+	err := db.QueryRow(stmt, id).Scan(&c.Id, &c.Info, &c.Due, &c.Stage)
+	if err != nil {
+		return c, err
+	}
+	// TODO: Get all members of a card
+	return c, nil
+}
+
+func SelectMember(db *sql.DB, id int) (*Member, error) {
+	m := new(Member)
+	stmt := "select * from members where member_id = $1"
+	err := db.QueryRow(stmt, id).Scan(&m.Id, &m.Name)
+	if err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
