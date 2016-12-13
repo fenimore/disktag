@@ -12,7 +12,7 @@ var (
 )
 
 func main() {
-	fmt.Println("Hello trello")
+	fmt.Println("Hello Backend")
 	conn, err := InitializeDB()
 	defer conn.Close()
 	db = conn
