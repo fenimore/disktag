@@ -56,6 +56,30 @@ var routes = Routes{
 		"/",
 		Index,
 	},
+	Route{
+		"NewCard",
+		"POST",
+		"/new/card",
+		NewCard,
+	},
+	Route{
+		"NewList",
+		"POST",
+		"/new/list",
+		NewList,
+	},
+	Route{
+		"GetCard",
+		"GET",
+		"/card/{id}",
+		GetCard,
+	},
+	Route{
+		"GetList",
+		"GET",
+		"/list/{id}",
+		GetList,
+	},
 }
 
 /* ############################################################
