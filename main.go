@@ -19,4 +19,16 @@ func AddMember(c *Card, m *Member) {
 
 func main() {
 	fmt.Println("Hello trello")
+	db, err := InitializeDB()
+	defer db.Close()
+	if err != nil {
+		fmt.Println("Error DB", err)
+	}
+
+	err = CreateTables(db)
+	if err != nil {
+		fmt.Println("Creation error", err)
+	}
+
+	Serve() // TODO: pass in connection and port flag
 }
