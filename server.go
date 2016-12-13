@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -136,6 +137,56 @@ func NewCard(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(card)
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+func GetCard(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r) // GET a card by id
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c, err := SelectCard(db, id)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound) // Doesn't exist
+		err = json.NewEncoder(w).Encode(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(c)
+		if err != nil {
+			fmt.Fprintf(w, "Error SON encoding %s", err)
+		}
+	}
+}
+
+func GetList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r) // GET a card by id
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	l, err := SelectList(db, id)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound) // Doesn't exist
+		err = json.NewEncoder(w).Encode(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(l)
+		if err != nil {
+			fmt.Fprintf(w, "Error SON encoding %s", err)
+		}
 	}
 }
 
