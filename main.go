@@ -3,29 +3,24 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 )
 
-// NOTE: Fuck methods?
-/* List Methods, Not currently Methods? */
-func AddSubscriber(l *List, m *Member) {
-	l.Subscribers = append(l.Subscribers, m)
-}
-
-/* Card Methods */
-func AddMember(c *Card, m *Member) {
-	c.Members = append(c.Members, m)
-}
+var (
+	db *sql.DB
+)
 
 func main() {
 	fmt.Println("Hello trello")
-	db, err := InitializeDB()
-	defer db.Close()
+	conn, err := InitializeDB()
+	defer conn.Close()
+	db = conn
 	if err != nil {
 		fmt.Println("Error DB", err)
 	}
 
-	err = CreateTables(db)
+	err = CreateTables(conn)
 	if err != nil {
 		fmt.Println("Creation error", err)
 	}

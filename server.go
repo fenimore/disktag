@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -54,10 +57,9 @@ var routes = Routes{
 	},
 }
 
-/* Handlers */
-
 /* ############################################################
- Index
+ Handlers
+TODO: Add authentication wrapper
 ############################################################ */
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +67,76 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "Index")
+}
+
+// NewList gets a post and then inserts a json objects
+// into that pgSQL db np
+// TODO: add user who created it, via authentication
+func NewList(w http.ResponseWriter, r *http.Request) {
+	list := new(List)
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		fmt.Println(err) // TODO: Write Error to JSON
+	}
+	err = r.Body.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = json.Unmarshal(body, list)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusUnprocessableEntity) //422
+		err = json.NewEncoder(w).Encode(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// TODO: set list creator id
+	_, err = InsertList(db, list) // NOTE: is the id automatically set?
+
+	// Spit it back to the user
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusCreated) // 201?
+	err = json.NewEncoder(w).Encode(list)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func NewCard(w http.ResponseWriter, r *http.Request) {
+	card := new(Card)
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = r.Body.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = json.Unmarshal(body, card)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusUnprocessableEntity) //422
+		err = json.NewEncoder(w).Encode(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// TODO: set list creator id
+	// TODO: Assign Members?
+	_, err = InsertCard(db, card)
+
+	// Spit it back to the user
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusCreated) // 201?
+	err = json.NewEncoder(w).Encode(card)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 /* ############################################################
