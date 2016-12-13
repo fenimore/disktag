@@ -21,6 +21,7 @@ const (
 // like a 'Board'
 type Document struct {
 	Id      int       `json:"id"`
+	Name    string    `json:"name"`
 	Lists   []*List   `json:"lists"`
 	Members []*Member `json:"members"`
 	Cards   []*Card   `json:"cards"`
