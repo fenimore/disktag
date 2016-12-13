@@ -1,0 +1,5 @@
+* cards
+- each 'board' will be a document
+- Each card will be a task of the document
+** tasks:
++ generated automatically
