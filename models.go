@@ -20,34 +20,34 @@ const (
 
 // like a 'Board'
 type Document struct {
-	Id      int
-	Lists   []*List
-	Members []*Member
-	Cards   []*Card
+	Id      int       `json:"id"`
+	Lists   []*List   `json:"lists"`
+	Members []*Member `json:"members"`
+	Cards   []*Card   `json:"cards"`
 }
 
 type Member struct {
-	Id   int
-	Name string
+	Id   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type List struct {
-	Id          int
-	Title       string
-	Cards       []*Card
-	Subscribers []*Member
+	Id          int       `json:"id"`
+	Title       string    `json:"title"`
+	Cards       []*Card   `json:"cards"`
+	Subscribers []*Member `json:"subscribers"`
 
 	// Unused
 	Archived bool
 }
 
 type Card struct {
-	Id      int
-	Info    string
-	File    *os.File
-	Members []*Member
-	Due     time.Time
-	Stage   *List
+	Id      int       `json:"id"`
+	Info    string    `json:"info"`
+	File    *os.File  `json:"file"`
+	Members []*Member `json:"members"`
+	Due     time.Time `json:"due_date"`
+	Stage   *List     `json:"stage"`
 	// if unused
 	Archived bool
 }
