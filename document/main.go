@@ -5,30 +5,31 @@ import (
 	"rsc.io/pdf"
 )
 
-var pages []pdf.Page
-var content []pdf.Content
-
 func main() {
-	reader, err := pdf.Open("observations.pdf")
+	reader, err := pdf.Open("zen.pdf")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	pages = make([]pdf.Page, reader.NumPage())
-	content = make([]pdf.Content, reader.NumPage())
+	type Page struct {
+		page    pdf.Page
+		content pdf.Content
+		font    []pdf.Font
+	}
+
+	pages := make([]Page, reader.NumPage())
 
 	for i := 1; i <= len(pages); i++ {
-		pages[i-1] = reader.Page(i)
+		page := reader.Page(i)
+		pages[i-1].page = page
+		pages[i-1].content = page.Content()
+		fmt.Print(page.Resources())
+		// fonts := page.Fonts()
+		// for f := range fonts {
+		//	fmt.Print(page.Font(fonts[f]).BaseFont())
+		//	fmt.Print(page.Font(fonts[f]).Widths())
+		// }
+		fmt.Println()
 	}
 
-	for i, page := range pages {
-		content[i] = page.Content()
-	}
-	return
-
-	for _, val := range content[20].Text {
-		fmt.Print(val.S) //, val.W)
-	}
-	// fmt.Println("content")
-	// fmt.Println(len(content[1].Text))
 }
