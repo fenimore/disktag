@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DB_USER     = "trello"
-	DB_PASSWORD = "trello"
-	DB_NAME     = "trello"
+	DB_USER     = "disk"
+	DB_PASSWORD = "disk"
+	DB_NAME     = "disk"
 	DB_SSL      = "disable" // "require" for HEROKU
 )
 
@@ -28,12 +28,13 @@ const (
 // Database PostrgreSQL models
 
 // like a 'Board'
+// The Stages field will order the stages
 type Document struct {
-	Id    int    `json:"id"`
-	Title string `json:"title"`
-	//Lists   []*List   `json:"lists"`
-	//Members []*Member `json:"members"`
-	//Cards   []*Card   `json:"cards"`
+	Id      int       `json:"id"`
+	Title   string    `json:"title"`
+	Stages  []*Stage  `json:"stages"`
+	Members []*Member `json:"members"`
+	Cards   []*Card   `json:"cards"`
 }
 
 type Member struct {
@@ -72,12 +73,12 @@ CREATE TABLE IF NOT EXISTS cards(
     card_id SERIAL PRIMARY KEY,
     info TEXT NOT NULL,
     due_date TIMESTAMP,
-    list_id INT REFERENCES lists (list_id) ON UPDATE CASCADE
+    stage_id INT REFERENCES stages (stage_id)
 );`
 
-var ListSchema = `
-CREATE TABLE IF NOT EXISTS lists(
-    list_id SERIAL PRIMARY KEY,
+var StageSchema = `
+CREATE TABLE IF NOT EXISTS stages(
+    stage_id SERIAL PRIMARY KEY,
     title TEXT NOT NULL
 
 );`
@@ -88,25 +89,25 @@ CREATE TABLE IF NOT EXISTS members(
     name VARCHAR(70)
 );`
 
-var ListCardsSchema = `
-CREATE TABLE IF NOT EXISTS list_cards(
-    list_id INT REFERENCES lists (list_id) ON UPDATE CASCADE,
-    card_id INT REFERENCES cards (card_id) ON UPDATE CASCADE,
-    CONSTRAINT list_card_key PRIMARY KEY (list_id, card_id)
+var StageCardsSchema = `
+CREATE TABLE IF NOT EXISTS stage_cards(
+    stage_id INT REFERENCES stages (stage_id),
+    card_id INT REFERENCES cards (card_id),
+    CONSTRAINT stage_card_key PRIMARY KEY (stage_id, card_id)
 );`
 
 var SubscriptionSchema = `
 CREATE TABLE IF NOT EXISTS subscriptions(
-    member_id INT REFERENCES members (member_id) ON UPDATE CASCADE,
-    list_id INT REFERENCES lists (list_id) ON UPDATE CASCADE,
-    CONSTRAINT subs_key PRIMARY KEY (member_id, list_id)
+    member_id INT REFERENCES members (member_id),
+    stage_id INT REFERENCES stages (stage_id),
+    CONSTRAINT subs_key PRIMARY KEY (member_id, stage_id)
 );`
 
 // NOTE: What cards belong to whom
 var MembershipSchema = `
 CREATE TABLE IF NOT EXISTS membership(
-    member_id INT REFERENCES members (member_id) ON UPDATE CASCADE,
-    card_id INT REFERENCES cards (card_id) ON UPDATE CASCADE,
+    member_id INT REFERENCES members (member_id),
+    card_id INT REFERENCES cards (card_id),
     CONSTRAINT membership_key PRIMARY KEY (member_id, card_id)
 );`
 
@@ -126,7 +127,7 @@ func InitializeDB() (*sql.DB, error) {
 
 func CreateTables(db *sql.DB) error {
 	var err error
-	_, err = db.Exec(ListSchema)
+	_, err = db.Exec(StageSchema)
 	if err != nil {
 		return err
 	}
@@ -138,7 +139,7 @@ func CreateTables(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec(ListCardsSchema)
+	_, err = db.Exec(StageCardsSchema)
 	if err != nil {
 		return err
 	}
@@ -154,21 +155,21 @@ func CreateTables(db *sql.DB) error {
 }
 
 // TODO: change to s
-func InsertStage(db *sql.DB, l *Stage) (int, error) {
+func InsertStage(db *sql.DB, s *Stage) (int, error) {
 	var lastInsertId int
-	err := db.QueryRow("INSERT INTO lists(title) VALUES($1) returning list_id;",
-		l.Title).Scan(&lastInsertId)
+	err := db.QueryRow("INSERT INTO stages(title) VALUES($1) returning stage_id;",
+		s.Title).Scan(&lastInsertId)
 	if err != nil {
 		return -1, err
 	}
-	l.Id = lastInsertId
+	s.Id = lastInsertId
 	return lastInsertId, nil
 }
 
 // InsertCard returns an id of the inserted card.
 func InsertCard(db *sql.DB, c *Card) (int, error) {
 	var lastInsertId int
-	err := db.QueryRow("INSERT INTO cards(info, due_date, list_id)"+
+	err := db.QueryRow("INSERT INTO cards(info, due_date, stage_id)"+
 		" VALUES($1,$2, $3) returning card_id;",
 		c.Description, c.Due).Scan(&lastInsertId)
 	if err != nil {
@@ -189,16 +190,16 @@ func InsertMember(db *sql.DB, m *Member) (int, error) {
 	return lastInsertId, nil
 }
 
-// SelectList returns a *List from db.
+// SelectStage returns a *Stage from db.
 func SelectStage(db *sql.DB, id int) (*Stage, error) {
-	l := new(Stage)
-	stmt := "select * from lists where list_id = $1"
-	err := db.QueryRow(stmt, id).Scan(&l.Id, &l.Title)
+	s := new(Stage)
+	stmt := "select * from stages where stage_id = $1"
+	err := db.QueryRow(stmt, id).Scan(&s.Id, &s.Title)
 	if err != nil {
-		return l, err
+		return s, err
 	}
-	// TODO: Find all cards that belong to said list
-	return l, nil
+	// TODO: Find all cards that belong to said stage
+	return s, nil
 }
 
 // SelectCard returns  a *Card from DB with id
