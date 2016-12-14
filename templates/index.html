@@ -10,24 +10,6 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
 
         <style>
-         /* Prevent the text contents of draggable elements from being selectable. */
-         [draggable] {
-             -moz-user-select: none;
-             -khtml-user-select: none;
-             -webkit-user-select: none;
-             user-select: none;
-             /* Required to make elements draggable in old WebKit */
-             -khtml-user-drag: element;
-             -webkit-user-drag: element;
-         }
-
-         .card {
-             cursor: move;
-         }
-
-         .stage.over {
-             border: 2px dashed #000;
-         }
 
         </style>
     </head>
@@ -55,48 +37,26 @@
         </div>
 
         <!-- jQuery first, then Tether, then Bootstrap JS. -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js" integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.3.7/js/tether.min.js" integrity="sha384-XTs3FgkjiBgo8qjEjBk0tGmf3wPrWtA6coPfQDfFEY8AnYJwjalXCiosYRBIBZX8" crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/js/bootstrap.min.js" integrity="sha384-BLiI7JTZm+JWlgKa0M0kGRpJbF2J8q+qreVrKBC47e3K6BW78kGLrCkeRX6I9RoK" crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"
+                integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.3.7/js/tether.min.js"
+                integrity="sha384-XTs3FgkjiBgo8qjEjBk0tGmf3wPrWtA6coPfQDfFEY8AnYJwjalXCiosYRBIBZX8" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/js/bootstrap.min.js"
+                integrity="sha384-BLiI7JTZm+JWlgKa0M0kGRpJbF2J8q+qreVrKBC47e3K6BW78kGLrCkeRX6I9RoK" crossorigin="anonymous"></script>
+        <script
+            src="http://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+            integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+            crossorigin="anonymous"></script>
         <script>
 
-         // https://www.html5rocks.com/en/tutorials/dnd/basics/
-         function handleDragStart(e) {
-             this.style.opacity = '0.4';  // this / e.target is the source node.
-         }
-         function handleDragEnd(e) {
-             console.log("Ending");
-             this.style.opacity = '1.0';  // this / e.target is the source node.
-         }
-
-         function handleDragOver(e) {
-             if (e.preventDefault) {
-                 e.preventDefault(); // Necessary. Allows us to drop.
-             }
-             e.dataTransfer.dropEffect = 'move';  // See the section on the DataTransfer object.
-             return false;
-         }
-
-         function handleDragEnter(e) {
-             // this / e.target is the current hover target.
-             this.classList.add('over');
-         }
-
-         function handleDragLeave(e) {
-             this.classList.remove('over');  // this / e.target is previous target element.
-         }
-
-         cards = document.getElementsByClassName("card");
-         for (card of cards) {
-             card.draggable = true;
-             card.addEventListener('dragstart', handleDragStart, false);
-             card.addEventListener('dragend', handleDragEnd, false);
-             card.addEventListener('dragenter', handleDragEnter, false);
-             card.addEventListener('dragover', handleDragOver, false);
-             card.addEventListener('dragleave', handleDragLeave, false);
-             console.log(card);
-         }
-
+         $(function() {
+             $( ".card" ).draggable();
+             $( ".stage" ).droppable({
+                 drop: function(event, ui) {
+                     // do something
+                 }
+             });
+         });
 
         </script>
 
