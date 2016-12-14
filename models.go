@@ -16,41 +16,53 @@ const (
 	DB_SSL      = "disable" // "require" for HEROKU
 )
 
+// Ideas on list items?
+const (
+	Next = iota
+	ToSend
+	Waiting
+	Confirm
+	Done
+)
+
 // Database PostrgreSQL models
 
 // like a 'Board'
 type Document struct {
-	Id      int       `json:"id"`
-	Name    string    `json:"name"`
-	Lists   []*List   `json:"lists"`
-	Members []*Member `json:"members"`
-	Cards   []*Card   `json:"cards"`
+	Id    int    `json:"id"`
+	Title string `json:"title"`
+	//Lists   []*List   `json:"lists"`
+	//Members []*Member `json:"members"`
+	//Cards   []*Card   `json:"cards"`
 }
 
 type Member struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
-type List struct {
+type Stage struct {
 	Id          int       `json:"id"`
 	Title       string    `json:"title"`
 	Cards       []*Card   `json:"cards"`
 	Subscribers []*Member `json:"subscribers"`
-
-	// Unused
-	Archived bool
 }
 
 type Card struct {
-	Id      int       `json:"id"`
-	Info    string    `json:"info"`
-	File    *os.File  `json:"file"`
-	Members []*Member `json:"members"`
-	Due     time.Time `json:"due_date"`
-	Stage   *List     `json:"stage"`
-	// if unused
-	Archived bool
+	Id          int           `json:"id"`
+	Description string        `json:"info"`
+	Due         time.Time     `json:"due_date"`
+	Attachments []*Attachment `json:"attachments"`
+	Labels      []*Label      `json:"labels"`
+}
+
+type Attachment struct {
+	Attachment *os.File `json:"attachment"`
+}
+
+type Label struct {
+	Label string `json:"label"`
 }
 
 // NOTE:  Ignore archived in db tables
@@ -141,7 +153,8 @@ func CreateTables(db *sql.DB) error {
 	return nil
 }
 
-func InsertList(db *sql.DB, l *List) (int, error) {
+// TODO: change to s
+func InsertStage(db *sql.DB, l *Stage) (int, error) {
 	var lastInsertId int
 	err := db.QueryRow("INSERT INTO lists(title) VALUES($1) returning list_id;",
 		l.Title).Scan(&lastInsertId)
@@ -157,7 +170,7 @@ func InsertCard(db *sql.DB, c *Card) (int, error) {
 	var lastInsertId int
 	err := db.QueryRow("INSERT INTO cards(info, due_date, list_id)"+
 		" VALUES($1,$2, $3) returning card_id;",
-		c.Info, c.Due, c.Stage).Scan(&lastInsertId)
+		c.Description, c.Due).Scan(&lastInsertId)
 	if err != nil {
 		return -1, err
 	}
@@ -177,8 +190,8 @@ func InsertMember(db *sql.DB, m *Member) (int, error) {
 }
 
 // SelectList returns a *List from db.
-func SelectList(db *sql.DB, id int) (*List, error) {
-	l := new(List)
+func SelectStage(db *sql.DB, id int) (*Stage, error) {
+	l := new(Stage)
 	stmt := "select * from lists where list_id = $1"
 	err := db.QueryRow(stmt, id).Scan(&l.Id, &l.Title)
 	if err != nil {
@@ -192,7 +205,7 @@ func SelectList(db *sql.DB, id int) (*List, error) {
 func SelectCard(db *sql.DB, id int) (*Card, error) {
 	c := new(Card)
 	stmt := "select * from cards where card_id = $1"
-	err := db.QueryRow(stmt, id).Scan(&c.Id, &c.Info, &c.Due, &c.Stage)
+	err := db.QueryRow(stmt, id).Scan(&c.Id, &c.Description, &c.Due)
 	if err != nil {
 		return c, err
 	}
