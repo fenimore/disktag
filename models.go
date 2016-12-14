@@ -5,6 +5,7 @@ import (
 	"os" // os?
 	"time"
 
+	"errors"
 	"fmt"
 	_ "github.com/bmizerany/pq" // HEROKU needs for parsing
 )
@@ -46,7 +47,7 @@ type Member struct {
 type Stage struct {
 	Id          int       `json:"id"`
 	Title       string    `json:"title"`
-	Cards       []*Card   `json:"cards"`
+	Cards       []*Card   `json:"cards"` // Populate not in DB
 	Subscribers []*Member `json:"subscribers"`
 }
 
@@ -54,6 +55,7 @@ type Card struct {
 	Id          int           `json:"id"`
 	Description string        `json:"info"`
 	Due         time.Time     `json:"due_date"`
+	Stage       *Stage        `json:"stage"`
 	Attachments []*Attachment `json:"attachments"`
 	Labels      []*Label      `json:"labels"`
 }
@@ -72,7 +74,8 @@ var CardSchema = `
 CREATE TABLE IF NOT EXISTS cards(
     card_id SERIAL PRIMARY KEY,
     description TEXT NOT NULL,
-    due_date TIMESTAMP
+    due_date TIMESTAMP,
+    stage_id INT REFERENCES stages (stage_id)
 );`
 
 var StageSchema = `
@@ -88,6 +91,7 @@ CREATE TABLE IF NOT EXISTS members(
     name VARCHAR(70)
 );`
 
+// Deprecate
 var StageCardsSchema = `
 CREATE TABLE IF NOT EXISTS stage_cards(
     stage_id INT REFERENCES stages (stage_id),
@@ -137,22 +141,22 @@ func CreateTables(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec(MemberSchema)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(StageCardsSchema)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(SubscriptionSchema)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(MembershipSchema)
-	if err != nil {
-		return err
-	}
+	// _, err = db.Exec(MemberSchema)
+	// if err != nil {
+	//	return err
+	// }
+	// _, err = db.Exec(StageCardsSchema)
+	// if err != nil {
+	//	return err
+	// }
+	// _, err = db.Exec(SubscriptionSchema)
+	// if err != nil {
+	//	return err
+	// }
+	// _, err = db.Exec(MembershipSchema)
+	// if err != nil {
+	//	return err
+	// }
 	return nil
 }
 
@@ -170,10 +174,13 @@ func InsertStage(db *sql.DB, s *Stage) (int, error) {
 
 // InsertCard returns an id of the inserted card.
 func InsertCard(db *sql.DB, c *Card) (int, error) {
+	if c.Stage == nil {
+		return -1, errors.New("No Stage provided")
+	}
 	var lastInsertId int
-	err := db.QueryRow("INSERT INTO cards(description, due_date)"+
+	err := db.QueryRow("INSERT INTO cards(description, due_date, stage_id)"+
 		" VALUES($1,$2, $3) returning card_id;",
-		c.Description, c.Due).Scan(&lastInsertId)
+		c.Description, c.Due, c.Stage.Id).Scan(&lastInsertId)
 	if err != nil {
 		return -1, err
 	}
@@ -200,8 +207,37 @@ func SelectStage(db *sql.DB, id int) (*Stage, error) {
 	if err != nil {
 		return s, err
 	}
-	// TODO: Find all cards that belong to said stage
+
+	err = PopulateStage(db, s)
+	if err != nil {
+		return s, err
+	}
+
 	return s, nil
+}
+
+func PopulateStage(db *sql.DB, s *Stage) error {
+	// Populate Cards
+	cards := make([]*Card, 0)
+	stmt := "select * from cards where stage_id = $1"
+	rows, err := db.Query(stmt, s.Id)
+	if err != nil {
+		return err
+	}
+
+	var stageId int
+	for rows.Next() {
+		c := new(Card)
+		err = rows.Scan(&c.Id, &c.Description, &c.Due, &stageId)
+		if err != nil {
+			return err
+		}
+		c.Stage = s
+		cards = append(cards, c)
+	}
+
+	s.Cards = cards
+	return nil
 }
 
 // SelectCard returns  a *Card from DB with id
@@ -218,7 +254,7 @@ func SelectCard(db *sql.DB, id int) (*Card, error) {
 
 // SelectStage returns a *Stage from db.
 // TODO: select according to Documetn
-func SelectAllStages(db *sql.DB, id int) ([]*Stage, error) {
+func SelectAllStages(db *sql.DB) ([]*Stage, error) {
 	// NOTE: Id is document?
 	stages := make([]*Stage, 0)
 	stmt := "select * from stages"
@@ -232,7 +268,12 @@ func SelectAllStages(db *sql.DB, id int) ([]*Stage, error) {
 		s := new(Stage)
 		err = rows.Scan(&s.Id, &s.Title)
 		if err != nil {
-			return nil, err
+			return stages, err
+		}
+
+		err = PopulateStage(db, s)
+		if err != nil {
+			return stages, err
 		}
 
 		stages = append(stages, s)
@@ -243,7 +284,7 @@ func SelectAllStages(db *sql.DB, id int) ([]*Stage, error) {
 
 // SelectCard returns  a *Card from DB with id
 // TODO: Select according to Document
-func SelectAllCards(db *sql.DB, id int) ([]*Card, error) {
+func SelectAllCards(db *sql.DB) ([]*Card, error) {
 	cards := make([]*Card, 0)
 	stmt := "select * from cards"
 	rows, err := db.Query(stmt)

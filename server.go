@@ -89,38 +89,59 @@ TODO: Add authentication wrapper
 ############################################################ */
 
 func MockData() {
-	cards := []*Card{
-		&Card{
-			Id:          1,
-			Description: "Factory stageed in NC",
-		},
-	}
 	stages := []*Stage{
-		&Stage{
-			Id:    3,
-			Title: "Validate collatoral",
-			Cards: cards,
-		},
 		&Stage{
 			Id:    1,
 			Title: "Next Up",
-			Cards: []*Card{},
 		},
 		&Stage{
 			Id:    2,
 			Title: "Doing",
-			Cards: []*Card{},
 		},
+		&Stage{
+			Id:    3,
+			Title: "Done",
+		},
+	}
+
+	for i := range stages {
+		_, err := InsertStage(db, stages[i])
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	cards := []*Card{
+		&Card{
+			Id:          1,
+			Description: "Factory listed in NC",
+			Stage:       stages[0],
+		},
+		&Card{
+			Id:          2,
+			Description: "Email by what's her name",
+			Stage:       stages[1],
+		},
+	}
+
+	for i := range cards {
+		_, err := InsertCard(db, cards[i])
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	stages, err := SelectAllStages(db)
+	if err != nil {
+		fmt.Println(err)
+	}
 	document := &Document{
-		Title: "Agreement 2016",
-		Id:    1,
-		//Stages: stages,
-		//Cards:  cards,
+		Title:  "Agreement 2016",
+		Id:     1,
+		Stages: stages,
 	}
 
 	t, err := template.ParseFiles("templates/index.html")

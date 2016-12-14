@@ -18,6 +18,16 @@
             {{ range .Stages }}
                 <div class="col-sm-4">
                     {{ .Title }}
+                    <hr>
+                    <ul>
+                    {{ range .Cards }}
+                        <li>
+                            <div> <!-- Panel -->
+                            {{ .Description }}
+                            </div>
+                        </li>
+                        {{end}}
+                    </ul>
                 </div>
             {{end}}
             </div>
