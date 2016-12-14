@@ -88,7 +88,7 @@ var routes = Routes{
 TODO: Add authentication wrapper
 ############################################################ */
 
-func Index(w http.ResponseWriter, r *http.Request) {
+func MockData() {
 	cards := []*Card{
 		&Card{
 			Id:          1,
@@ -112,11 +112,15 @@ func Index(w http.ResponseWriter, r *http.Request) {
 			Cards: []*Card{},
 		},
 	}
+
+}
+
+func Index(w http.ResponseWriter, r *http.Request) {
 	document := &Document{
-		Title:  "Example Document",
-		Id:     1,
-		Stages: stages,
-		Cards:  cards,
+		Title: "Agreement 2016",
+		Id:    1,
+		//Stages: stages,
+		//Cards:  cards,
 	}
 
 	t, err := template.ParseFiles("templates/index.html")

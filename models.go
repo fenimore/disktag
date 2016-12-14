@@ -71,9 +71,8 @@ type Label struct {
 var CardSchema = `
 CREATE TABLE IF NOT EXISTS cards(
     card_id SERIAL PRIMARY KEY,
-    info TEXT NOT NULL,
-    due_date TIMESTAMP,
-    stage_id INT REFERENCES stages (stage_id)
+    description TEXT NOT NULL,
+    due_date TIMESTAMP
 );`
 
 var StageSchema = `
@@ -96,6 +95,9 @@ CREATE TABLE IF NOT EXISTS stage_cards(
     CONSTRAINT stage_card_key PRIMARY KEY (stage_id, card_id)
 );`
 
+// TODO: Document Schema and Relational tables
+
+// NOTE: Members Subscribed to Stage
 var SubscriptionSchema = `
 CREATE TABLE IF NOT EXISTS subscriptions(
     member_id INT REFERENCES members (member_id),
@@ -169,7 +171,7 @@ func InsertStage(db *sql.DB, s *Stage) (int, error) {
 // InsertCard returns an id of the inserted card.
 func InsertCard(db *sql.DB, c *Card) (int, error) {
 	var lastInsertId int
-	err := db.QueryRow("INSERT INTO cards(info, due_date, stage_id)"+
+	err := db.QueryRow("INSERT INTO cards(description, due_date)"+
 		" VALUES($1,$2, $3) returning card_id;",
 		c.Description, c.Due).Scan(&lastInsertId)
 	if err != nil {
@@ -214,6 +216,55 @@ func SelectCard(db *sql.DB, id int) (*Card, error) {
 	return c, nil
 }
 
+// SelectStage returns a *Stage from db.
+// TODO: select according to Documetn
+func SelectAllStages(db *sql.DB, id int) ([]*Stage, error) {
+	// NOTE: Id is document?
+	stages := make([]*Stage, 0)
+	stmt := "select * from stages"
+	rows, err := db.Query(stmt)
+	defer rows.Close()
+	if err != nil {
+		return stages, err
+	}
+
+	for rows.Next() {
+		s := new(Stage)
+		err = rows.Scan(&s.Id, &s.Title)
+		if err != nil {
+			return nil, err
+		}
+
+		stages = append(stages, s)
+	}
+
+	return stages, nil
+}
+
+// SelectCard returns  a *Card from DB with id
+// TODO: Select according to Document
+func SelectAllCards(db *sql.DB, id int) ([]*Card, error) {
+	cards := make([]*Card, 0)
+	stmt := "select * from cards"
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return cards, err
+	}
+	for rows.Next() {
+		c := new(Card)
+		err = rows.Scan(&c.Id, &c.Description, &c.Due)
+		if err != nil {
+			return nil, err
+		}
+
+		cards = append(cards, c)
+
+	}
+	// TODO: Get all members of a card// populate?
+	return cards, nil
+}
+
+// SelectMember isn't used for now...
 func SelectMember(db *sql.DB, id int) (*Member, error) {
 	m := new(Member)
 	stmt := "select * from members where member_id = $1"
