@@ -85,18 +85,18 @@ CREATE TABLE IF NOT EXISTS stages(
 
 );`
 
-var MemberSchema = `
-CREATE TABLE IF NOT EXISTS members(
-    member_id SERIAL PRIMARY KEY,
-    name VARCHAR(70)
-);`
-
 // Deprecate
 var StageCardsSchema = `
 CREATE TABLE IF NOT EXISTS stage_cards(
     stage_id INT REFERENCES stages (stage_id),
     card_id INT REFERENCES cards (card_id),
     CONSTRAINT stage_card_key PRIMARY KEY (stage_id, card_id)
+);`
+
+var MemberSchema = `
+CREATE TABLE IF NOT EXISTS members(
+    member_id SERIAL PRIMARY KEY,
+    name VARCHAR(70)
 );`
 
 // TODO: Document Schema and Relational tables

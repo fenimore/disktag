@@ -58,6 +58,12 @@ var routes = Routes{
 		Index,
 	},
 	Route{
+		"AjaxMoveCard",
+		"GET",
+		"/move{card_id}/{stage_id}",
+		MoveCard,
+	}, // New and Gets
+	Route{
 		"NewCard",
 		"POST",
 		"/new/card",
@@ -152,6 +158,35 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, document)
 }
 
+func MoveCard(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r) // GET a card by id
+	// TODO: Check errors
+	cardId, _ := strconv.Atoi(vars["card_id"])
+	stageId, _ := strconv.Atoi(vars["stage_id"])
+	_, err := SelectCard(db, cardId)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound) // Doesn't exist
+		err = json.NewEncoder(w).Encode(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	_, _ = SelectStage(db, stageId) // TODO: check error
+
+	// TODO:
+	// Check if stage is referenced by card
+	// If not, reference it by card
+	// Update database accordingly
+	// send back success message
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusAccepted)
+	err = json.NewEncoder(w).Encode("Success")
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
 /* ############################################################
 API  Handlers
 ############################################################ */
@@ -174,7 +209,7 @@ func NewStage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		w.WriteHeader(http.StatusUnprocessableEntity) //422
-		err = json.NewEncoder(w).Encode(err)
+		err = json.NewEncoder(w).Encode(stage)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -187,9 +222,6 @@ func NewStage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.WriteHeader(http.StatusCreated) // 201?
 	err = json.NewEncoder(w).Encode(stage)
-	if err != nil {
-		fmt.Println(err)
-	}
 }
 
 func NewCard(w http.ResponseWriter, r *http.Request) {
